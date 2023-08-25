@@ -1,0 +1,1420 @@
+
+
+import numpy as np
+import re
+import json
+import copy
+import sys
+import time
+kappa=10
+def filtre_element(lst_new,nnodold,dctElems2,lst_old): #dctElems2[element_label]
+   lst_new1=[]
+   for keynew in lst_new:
+       nnodenew=0
+       nodenew=dctElems2[keynew]
+       for iinew in nodenew:
+           if iinew in nnodold:
+              nnodenew=nnodenew+1
+       if nnodenew>=3:
+           
+           lst_old.append(keynew)  
+       else:
+           lst_new1.append(keynew)    
+           
+   return lst_new1,lst_old
+   
+
+def oi_calc(so,sh,kappa):
+      return so + kappa * sh # Carters equation OI = so + kappa * sh
+      
+def principal_Stress_calc(sxx,syy,sxy):
+      s11=(sxx+syy)/2+sqrt(1*(sxx-syy)**2/4+sxy**2)
+      s22=(sxx+syy)/2-sqrt(1*(sxx-syy)**2/4+sxy**2)
+      ss=1/2*sqrt((s11-s22)**2)
+      sh=(s11+s22)/2
+      return ss+kappa*min(0,sh) #s11,s22
+
+def principal_Stress_calc_soo(sxx,syy,sxy):
+      s11=(sxx+syy)/2+sqrt(1*(sxx-syy)**2/4+sxy**2)
+      s22=(sxx+syy)/2-sqrt(1*(sxx-syy)**2/4+sxy**2)
+      ss=1/2*sqrt((s11-s22)**2)
+      return ss
+
+def principal_Stress_calcsh(sxx,syy,sxy):
+      s11=(sxx+syy)/2+sqrt(1*(sxx-syy)**2/4+sxy**2)
+      s22=(sxx+syy)/2-sqrt(1*(sxx-syy)**2/4+sxy**2)
+      ss=1/2*sqrt((s11-s22)**2)
+      sh=(s11+s22)/2
+      return sh #s11,s22    
+
+def filtre_element(lst_new,nnodold,dctElems2,lst_old): #dctElems2[element_label]
+   lst_new1=[]
+   for keynew in lst_new:
+       nnodenew=0
+       nodenew=dctElems2[keynew]
+       
+       for iinew in nodenew:
+           if iinew in nnodold:
+              nnodenew=nnodenew+1
+       ##print('nodenewi=',nodenew,nnodenew)
+       if nnodenew>=len(nodenew):
+           
+           lst_old=np.append(lst_old,keynew)  
+       else:
+           lst_new1=np.append(lst_new1,keynew)    
+           
+   return lst_new1,lst_old      
+
+
+def filtre_element(lst_new,nnodold,dctElems2,lst_old,nodeallos): #dctElems2[element_label]
+   lst_new1=[]
+   for keynew in lst_new:
+       nnodenew=0
+       nnodenew1=0
+       nodenew=dctElems2[keynew]
+       
+       for iinew in nodenew:
+           if iinew in nnodold:
+              nnodenew=nnodenew+1
+           if iinew in nodeallos:
+              nnodenew1=nnodenew1+1
+
+       ##print('nodenewi=',nodenew,nnodenew)
+       if nnodenew+nnodenew1>=len(nodenew) or nnodenew>=4:
+           
+           lst_old=np.append(lst_old,keynew)  
+       else:
+           lst_new1=np.append(lst_new1,keynew)    
+           
+   return lst_new1,lst_old
+
+
+def filtre_element_old(lst_new,nnodnew,dctElems2,lst_old): #dctElems2[element_label]
+   lst_new1=[]
+   for keynew in lst_old:
+       nnodenew=0
+       nodenew=dctElems2[keynew]
+       
+       for iinew in nodenew:
+           if iinew in nnodnew:
+              nnodenew=nnodenew+1
+       ##print('nodenewi=',nodenew,nnodenew)
+       if nnodenew>=len(nodenew):
+           lst_new1=np.append(lst_new1,keynew)
+             
+       else:
+           lst_old=np.append(lst_old,keynew)
+           
+   return lst_new1,lst_old
+
+def find_thickness_oi(lst_old1,lst_old4,dctElems2,dctNodes): #dctElems2[element_label] dctNodes[temp_line[0]]
+   miny1=5000
+   maxy1=-5000
+   miny4=5000
+   maxy4=-5000   
+   
+   for keynew in lst_old1:
+       nnodenew=0
+       nodenew=dctElems2[keynew]
+       for iinew in nodenew:
+           miny1=min(miny1,dctNodes[iinew]['yc'])
+           maxy1=max(maxy1,dctNodes[iinew]['yc'])
+   for keynew in lst_old4:
+       nnodenew=0
+       nodenew=dctElems2[keynew]
+       for iinew in nodenew:
+           miny4=min(miny4,dctNodes[iinew]['yc'])
+           maxy4=max(maxy4,dctNodes[iinew]['yc'])   
+   
+   hmin=min(maxy1-miny1,maxy4-miny4) 
+           
+   return hmin
+
+def find_percent_oi(lst_old1,lst_old4,nele1,nele4): #dctElems2[element_label] dctNodes[temp_line[0]]
+    
+   
+   hmin=min(len(lst_old1)/nele1,len(lst_old4)/nele4) 
+           
+   return hmin
+
+
+
+
+def find_key_xc(lst_element,dctElems2,dctNodes): 
+   
+   xmean=[]
+   ymean=[]
+   for keynew in lst_element:
+       nnodenew=0
+       nodenew=dctElems2[keynew]
+       x=0
+       y=0
+       for iinew in nodenew:
+           x=x+dctNodes[iinew]['xc']
+           y=y+dctNodes[iinew]['yc']
+
+       xmean.append(x/len(nodenew))
+       ymean.append(y/len(nodenew))
+           
+   return xmean,ymean
+
+sys.path.append('/home/salome_meca/V2019.0.3_universal/tools/Code_aster_stable-v144_smeca/lib/aster/Utilitai/' )
+sys.path.append('/home/majnooni/VanVuongLAI/code_lai/')
+from Utilitai.partition import *
+
+
+
+# Opening JSON file of parameters namereper
+with open("/home/majnooni/VanVuongLAI/code_lai/namereper.json") as input_params:
+      namereper=json.load(input_params)
+
+with open("/home/majnooni/VanVuongLAI/code_lai/"+namereper['name']+"/input_params.json") as input_params:
+      input_data = json.load(input_params)
+
+iteration = input_data["iteration"]
+main_root = input_data["main_root"]
+path_A1 = input_data["path_A1"]
+path_A3 = input_data["path_A3"]
+path_A5 = input_data["path_A5"]
+path_elems_criteria = input_data["path_elems_criteria"]
+path_rmed = input_data["path_rmed"]
+path_vtk = input_data["path_vtk"]
+path_Eevo = input_data["path_Eevo"]
+Encc = input_data["Encc"]
+hminimpose=input_data["h1"]
+Eecc = input_data["Eecc"]
+Earti = input_data["Earti"]
+Nuncc = input_data["Nuncc"]
+Nuecc = input_data["Nuecc"]
+Fy = input_data["Fy"]
+l2 = input_data["l2"]
+xvar=input_data['xvar']
+
+h1=input_data["h1"]
+h2=input_data["h2"]
+h3=input_data["h3"]
+h4=input_data["h4"]
+
+lcontour=input_data["lcontour"]
+F_Countour = (Fy/lcontour)/Eecc
+PRESSURE = -Fy/l2
+elems_props_new = input_data["elems_props_new"]
+elems_props_current = input_data["elems_props_current"]
+path_cp_values = input_data["path_cp_values"]
+repertoire=input_data["repertoire"]
+
+fichier_folderv=input_data['fichier_folder']
+ 
+
+def function_heaviside(x):
+   return round(1-1/(1+np.exp(-epsi*(0.5-x))),3) 
+#########################################################################
+#                                                                       
+#                                   CODE ASTER                                
+#                                                                       
+#########################################################################
+
+DEBUT(LANG='FR',
+      PAR_LOT='NON',
+      )
+
+
+U = 50 # randomly selected
+DEFI_FICHIER(ACTION='ASSOCIER',
+            FICHIER=path_A1,
+            UNITE=U)
+
+mesh_A1 = LIRE_MAILLAGE(FORMAT='IDEAS',
+                  UNITE=U,
+                  INFO=1)
+
+
+U += 1
+DEFI_FICHIER(ACTION='ASSOCIER',
+            FICHIER=path_A3,
+            UNITE=U)
+
+mesh_A3 = LIRE_MAILLAGE(FORMAT='IDEAS', # IDEAS (.unv) format with PRE_IDEAS, U7.01.01; Jean-Pierre Aubry page 27
+                  UNITE=U,
+                  INFO=1)
+
+
+U += 1
+DEFI_FICHIER(ACTION='ASSOCIER',
+            FICHIER=path_A5,
+            UNITE=U)
+mesh_A5 = LIRE_MAILLAGE(FORMAT='IDEAS', # IDEAS (.unv) format with PRE_IDEAS, U7.01.01; Jean-Pierre Aubry page 27
+                  UNITE=U,
+                  INFO=1)
+
+# Mesh merging
+
+
+
+
+meshA345 = ASSE_MAILLAGE(MAILLAGE_1=mesh_A3,
+                        MAILLAGE_2=mesh_A5,
+                        OPERATION='COLLAGE',
+                        COLLAGE=_F(GROUP_MA_1='pgColA42',
+                                    GROUP_MA_2='pgColA5',),
+                        )
+
+
+mesh = ASSE_MAILLAGE(MAILLAGE_1=mesh_A1,
+                  MAILLAGE_2=meshA345,
+                  OPERATION='SUPERPOSE',)
+
+mesh = MODI_MAILLAGE(reuse=mesh,
+                  MAILLAGE=mesh,
+                  ORIE_PEAU_2D=_F(GROUP_MA=('pgCtA2', 'pgCtA3', 'pgLoad'),),
+                  INFO=1,)
+
+# Create GROUP OF ELEMENTS
+mesh = DEFI_GROUP(reuse=mesh,
+                  MAILLAGE=mesh,
+                  CREA_GROUP_MA=_F(NOM='TOTAL',
+                                    TOUT='OUI',
+                                    TYPE_MAILLE='TOUT',),
+                  ALARME='OUI',)
+
+
+
+mesh = DEFI_GROUP(reuse=mesh,
+                  MAILLAGE=mesh,
+                  CREA_GROUP_MA=_F(NOM='pgA1A41',
+                                    UNION=('pgA1', 'pgA2'),
+                                    TYPE_MAILLE='TOUT',),
+                  ALARME='OUI',)
+
+
+mesh = DEFI_GROUP(reuse=mesh,
+                  MAILLAGE=mesh,
+                  CREA_GROUP_MA=_F(NOM='pgA1A42',
+                                    UNION=('pgA3', 'pgA4'),
+                                    TYPE_MAILLE='TOUT',),
+                  ALARME='OUI',)
+
+mesh = DEFI_GROUP(reuse=mesh,
+                  MAILLAGE=mesh,
+                  CREA_GROUP_MA=_F(NOM='pgA1A4',
+                                    UNION=('pgA1', 'pgA4'),
+                                    TYPE_MAILLE='TOUT',),
+                  ALARME='OUI',)
+               
+
+#Create GROUP OF NODES
+mesh = DEFI_GROUP(reuse = mesh,
+                  MAILLAGE = mesh,
+                  CREA_GROUP_NO=(
+                                    _F(CRIT_NOEUD='TOUS', GROUP_MA=('pgFixed'), NOM=('pgFixed')),
+                                    # _F(CRIT_NOEUD='TOUS', GROUP_MA=('pgColA1'), NOM=('pgColA1')),
+                                    # _F(CRIT_NOEUD='TOUS', GROUP_MA=('pgSymA1'), NOM=('pgSymA1')),
+                                    _F(CRIT_NOEUD='TOUS', GROUP_MA=('pgA1'), NOM=('pgA1')),
+                                    # _F(CRIT_NOEUD='TOUS', GROUP_MA=('pgColA2'),NOM=('pgColA2')),
+                                    _F(CRIT_NOEUD='TOUS', GROUP_MA=('pgCtA2'),NOM=('pgCtA2')),
+                                    _F(CRIT_NOEUD='TOUS', GROUP_MA=('pgSymA2'),NOM=('pgSymA2')),
+                                    _F(CRIT_NOEUD='TOUS', GROUP_MA=('pgA2'),NOM=('pgA2')),
+                                    _F(CRIT_NOEUD='TOUS', GROUP_MA=('pgA0'),NOM=('pgA0')),
+                                    _F(CRIT_NOEUD='TOUS', GROUP_MA=('pgCtA3'), NOM=('pgCtA3')),
+                                    # _F(CRIT_NOEUD='TOUS', GROUP_MA=('pgColA3'), NOM=('pgColA3')),
+                                    _F(CRIT_NOEUD='TOUS', GROUP_MA=('pgSymA3'),NOM=('pgSymA3')),
+                                    _F(CRIT_NOEUD='TOUS', GROUP_MA=('pgA3'),NOM=('pgA3')),
+                                    # _F(CRIT_NOEUD='TOUS', GROUP_MA=('pgColA41'), NOM=('pgColA41')),
+                                    # _F(CRIT_NOEUD='TOUS', GROUP_MA=('pgColA42'), NOM=('pgColA42')),
+                                    _F(CRIT_NOEUD='TOUS', GROUP_MA=('pgSymA4'),NOM=('pgSymA4')),
+                                    _F(CRIT_NOEUD='TOUS', GROUP_MA=('pgA4'),NOM=('pgA4')),
+                                    # _F(CRIT_NOEUD='TOUS', GROUP_MA=('pgColA5'), NOM=('pgColA5')),
+                                    _F(CRIT_NOEUD='TOUS', GROUP_MA=('pgLoad'), NOM=('pgLoad')),
+                                    _F(CRIT_NOEUD='TOUS', GROUP_MA=('pgSymA5'),NOM=('pgSymA5')),
+                                    _F(CRIT_NOEUD='TOUS', GROUP_MA=('pgA5'),NOM=('pgA5')),
+                                    _F(CRIT_NOEUD='TOUS', GROUP_MA=('TOTAL'),NOM=('TOTAL')),
+                                    ),
+                                    )
+
+mesh = DEFI_GROUP(CREA_GROUP_NO = (_F(GROUP_MA = ('pgSymA1'),
+                                      NOM = 'pgSymA1',
+                                      OPTION = 'NOEUD_ORDO')),
+                  MAILLAGE = mesh,
+                  reuse = mesh)
+
+
+mesh = DEFI_GROUP(CREA_GROUP_NO = (_F(GROUP_MA = ('pgLoad'),
+                                      NOM = 'nodeFY1',
+                                      OPTION = 'NOEUD_ORDO')),
+                  MAILLAGE = mesh,
+                  reuse = mesh)
+mesh = DEFI_GROUP (reuse = mesh, 
+                  MAILLAGE = mesh,
+                  CREA_GROUP_NO = (_F ( NOM = 'nodeFY', INTERSEC= ('pgLoad', 'pgSymA5')),)
+                  )
+                  
+mesh = DEFI_GROUP (reuse = mesh, 
+                  MAILLAGE = mesh,
+                  CREA_GROUP_NO = (_F ( NOM = 'nodeFY2', DIFFE= ('pgLoad', 'nodeFY')),)
+                  ) 
+                              
+#########################################################################
+#                                                                       #
+#                                   MAIN                                #
+#                                                                       #
+#########################################################################
+#for the malliage All
+ALLdat = MAIL_PY() # Function to access mesh with python
+ALLdat.FromAster(mesh)
+ALLnnod = ALLdat.dime_maillage[0] #number of nodes
+ALLnelem = ALLdat.dime_maillage[2] #number of elements
+NoGO = ALLdat.gno     ## list of GROUP_NO groups (see help(MAIL_PY) for object methods reference)
+coord_nodes = ALLdat.cn  ## xyz coordinates of nodes (nonu*3 matrix)
+connec = ALLdat.co #   Get element connection as class CONNEC a two  numpy arrays
+#       referring to an element of it as follow:
+#       Connex[k]  array (sequence) of the node of the k-th element
+
+
+#####################################################################
+#       Connex[k][j]  reference the j-th node of the k-th element connectivity
+#####################################################################
+###### Structuring all nodes, elements, coordinates, GROUP_MA, GROUP_NO 
+mesh_data = ALLdat.Voir_Mail()
+
+mesh_data_list = list()
+for line in mesh_data.split("\n"):
+    mesh_data_list.append(line)
+
+
+###### Constrcuting all coordinates, nodes and elements
+dctNodes = dict() # {'N1': {'xc': 0.0, 'yc': 0.0, 'zc': 0.0}}
+dctElems = dict() # {'M1': {'N1': {'xc': 0.0, 'yc': 0.0, 'zc': 0.0}, 'N6': {'xc': 0.999999999999267, 'yc': 0.0, 'zc': 0.0}}}
+dctElems2 = dict() # {'M1': {'N1','N6'}}
+
+
+for line in mesh_data.split("\n"):
+      if len(line) != 0: # there are some lines with zero len
+            if line[0] == 'N':
+                  temp_line = re.sub("\s+", ",", line.strip()).split(',')
+                  node_label = temp_line[0]
+                  coordinates = temp_line[1:]
+                  xc = float(temp_line[1:][0])
+                  yc = float(temp_line[1:][1])
+                  zc = float(temp_line[1:][2])
+                  dctNodes[temp_line[0]] = {
+                                                "xc":round(xc,2),
+                                                "yc":round(yc,2),
+                                                "zc":round(zc,2)
+                                                }
+
+            if line[0] == 'M':
+                  temp_line = re.sub("\s+", ",", line.strip()).split(',')
+                  element_label = temp_line[0]
+                  nodes_of_element = temp_line[1:]
+                  dctElems[element_label] = {Node:dctNodes[Node] for Node in nodes_of_element}
+                  dctElems2[element_label] = nodes_of_element
+                 
+                  ####print('element:',element_label,dctElems2[element_label])
+
+
+
+
+###### Constrcuting all GROUP_MA
+GROUP_MA_dict = dict()
+for num in range(len(mesh_data_list)):
+    if mesh_data_list[num] == 'GROUP_MA':
+        temp_MA = re.sub("\s+", ",", mesh_data_list[num + 1].strip())
+        index = num + 2
+        temp_list = list()
+        
+        while mesh_data_list[index].startswith(' M'):
+            temp_line = re.sub("\s+", ",", mesh_data_list[index].strip()).split(',')
+            for e in temp_line:
+                temp_list.append(e)
+            index += 1
+        GROUP_MA_dict[temp_MA] = temp_list
+
+
+###### Constrcuting all GROUP_NO
+GROUP_NO_dict = dict()
+for key in NoGO.keys():
+      temp_key = copy.copy(key)
+      temp_array_nodes = copy.copy(NoGO[key]) + 1 # Python starts at 0
+      temp_list_nodes = [f'N{num}' for num in temp_array_nodes]
+      GROUP_NO_dict[temp_key] = temp_list_nodes
+  
+
+
+
+#######################
+
+model = AFFE_MODELE(AFFE=_F(
+                        MODELISATION=('C_PLAN', ),
+                        #MODELISATION=('AXIS','AXIS_SI' ), 
+                        PHENOMENE='MECANIQUE',
+                        TOUT='OUI'),
+                        MAILLAGE=mesh)
+
+
+
+###################
+dct_pgA5 = dict()
+dct_pgA5i=[]
+dof5ii=0
+for key in GROUP_MA_dict['pgA5']:
+    dct_pgA5[key] = {                  
+		              'E':Eecc,
+		              'nu':Nuecc,  
+		              }
+    if dof5ii<=2:
+	    
+	    dct_pgA5i=np.append(dct_pgA5i,key)   
+	    dof5ii=dof5ii+1               
+
+
+
+
+dct_pgA0 = dict()
+for key in GROUP_MA_dict['pgA0']:
+    dct_pgA0[key] = {                  
+                      'E':Eecc,
+                      'nu':Nuecc,  
+                      }
+                      
+dct_pgA2 = dict()
+for key in GROUP_MA_dict['pgA2']:
+    dct_pgA2[key] = {                  
+                      'E':Earti,
+                      'nu':Nuncc,  
+                      }
+                      
+                      
+dct_pgA3 = dict()
+for key in GROUP_MA_dict['pgA3']:
+    dct_pgA3[key] = {                  
+                      'E':Earti,
+                      'nu':Nuncc,  
+                      }
+dct_pgA4 = dict()
+for key in GROUP_MA_dict['pgA4']:
+    dct_pgA4[key] = {                  
+                      'E':Encc,
+                      'nu':Nuecc,  
+                      }
+dct_pgA1 = dict()
+for key in GROUP_MA_dict['pgA1']:
+    dct_pgA1[key] = {                  
+                      'E':Encc,
+                      'nu':Nuecc,  
+                      }                      
+                      
+###################
+dct_pgA1A4 = dict()
+for key in GROUP_MA_dict['pgA1A4']:
+    dct_pgA1A4[key] = {
+                      'iteration': iteration,
+                      'E':Encc,
+                      'nu':Nuncc,
+                      'OI':0,
+                      'SXX':0,
+                      'update':'true',
+                      'new':'false',
+                      'niter':0
+                      }
+
+#########################################################################
+#                                                                       
+#     
+#           DIVIDE THE DESIGN DOMAINS INTO 80 EQUAL SUBDOMAINS 
+#                                                                
+#########################################################################
+
+lst_element=[]
+for key in dct_pgA1A4:
+    lst_element.append(key)
+print(lst_element) 
+
+xcmean,ycmean=find_key_xc(lst_element,dctElems2,dctNodes)
+
+xc_1=[]
+xc_2=[]
+xc_3=[]
+xc_4=[]
+xc_5=[]
+xc_6=[]
+xc_7=[]
+xc_8=[]
+xc_9=[]
+xc_10=[]
+
+xc_11=[]
+xc_12=[]
+xc_13=[]
+xc_14=[]
+xc_15=[]
+xc_16=[]
+xc_17=[]
+xc_19=[]
+xc_18=[]
+xc_20=[]
+
+
+xc_21=[]
+xc_22=[]
+xc_23=[]
+xc_24=[]
+xc_25=[]
+xc_26=[]
+xc_27=[]
+xc_28=[]
+xc_29=[]
+xc_30=[]
+
+
+xc_31=[]
+xc_32=[]
+xc_33=[]
+xc_34=[]
+xc_35=[]
+xc_36=[]
+xc_37=[]
+xc_38=[]
+xc_39=[]
+xc_40=[]
+
+xc_41=[]
+xc_42=[]
+xc_43=[]
+xc_44=[]
+xc_45=[]
+xc_46=[]
+xc_47=[]
+xc_48=[]
+xc_49=[]
+xc_50=[]
+
+xc_51=[]
+xc_52=[]
+xc_53=[]
+xc_54=[]
+xc_55=[]
+xc_56=[]
+xc_57=[]
+xc_59=[]
+xc_58=[]
+xc_60=[]
+
+
+xc_61=[]
+xc_62=[]
+xc_63=[]
+xc_64=[]
+xc_65=[]
+xc_66=[]
+xc_67=[]
+xc_68=[]
+xc_69=[]
+xc_70=[]
+
+
+xc_71=[]
+xc_72=[]
+xc_73=[]
+xc_74=[]
+xc_75=[]
+xc_76=[]
+xc_77=[]
+xc_78=[]
+xc_79=[]
+xc_80=[]
+
+for i in range(len(lst_element)):
+
+    if lst_element[i] in dct_pgA1 and ycmean[i]<=h1/4:
+	    if xcmean[i]<1*l2/10:
+	       xc_1.append(lst_element[i])
+	       dct_pgA1A4[lst_element[i]]['E']=xvar[0]*Eecc
+	    if xcmean[i]<2*l2/10 and xcmean[i]>=1*l2/10:
+	       xc_2.append(lst_element[i]) 
+	       dct_pgA1A4[lst_element[i]]['E']=xvar[1]*Eecc
+	  
+	    if xcmean[i]<3*l2/10 and xcmean[i]>=2*l2/10:
+	       xc_3.append(lst_element[i])    
+	       dct_pgA1A4[lst_element[i]]['E']=xvar[2]*Eecc
+
+	    if xcmean[i]<4*l2/10 and xcmean[i]>=3*l2/10:
+	       xc_4.append(lst_element[i]) 
+	       dct_pgA1A4[lst_element[i]]['E']=xvar[3]*Eecc
+	    if xcmean[i]<5*l2/10 and xcmean[i]>=4*l2/10:
+	       xc_5.append(lst_element[i])   
+	       dct_pgA1A4[lst_element[i]]['E']=xvar[4]*Eecc
+	       
+	    if xcmean[i]<6*l2/10 and xcmean[i]>=5*l2/10:
+	       xc_6.append(lst_element[i]) 
+	       dct_pgA1A4[lst_element[i]]['E']=xvar[5]*Eecc
+	    if xcmean[i]<7*l2/10 and xcmean[i]>=6*l2/10:
+	       xc_7.append(lst_element[i])  
+	       dct_pgA1A4[lst_element[i]]['E']=xvar[6]*Eecc        
+	       
+
+	    if xcmean[i]<8*l2/10 and xcmean[i]>=7*l2/10:
+	       xc_8.append(lst_element[i]) 
+	       dct_pgA1A4[lst_element[i]]['E']=xvar[7]*Eecc
+	    if xcmean[i]<9*l2/10 and xcmean[i]>=8*l2/10:
+	       xc_9.append(lst_element[i])   
+	       dct_pgA1A4[lst_element[i]]['E']=xvar[8]*Eecc
+	       
+	    if xcmean[i]<=10*l2/10+0.001 and xcmean[i]>=9*l2/10:
+	       xc_10.append(lst_element[i]) 
+	       dct_pgA1A4[lst_element[i]]['E']=xvar[9]*Eecc
+	       
+    if lst_element[i] in dct_pgA1 and ycmean[i]<=h1/2 and ycmean[i]>h1/4:	       
+	    if xcmean[i]<1*l2/10:
+	       xc_11.append(lst_element[i])   
+	       dct_pgA1A4[lst_element[i]]['E']=xvar[10]*Eecc
+
+	    if xcmean[i]<2*l2/10 and xcmean[i]>=1*l2/10:
+	       xc_12.append(lst_element[i]) 
+	       dct_pgA1A4[lst_element[i]]['E']=xvar[11]*Eecc
+	    if xcmean[i]<3*l2/10 and xcmean[i]>=2*l2/10:
+	       xc_13.append(lst_element[i])  
+	       dct_pgA1A4[lst_element[i]]['E']=xvar[12]*Eecc 
+	       
+	    if xcmean[i]<4*l2/10 and xcmean[i]>=3*l2/10:
+	       xc_14.append(lst_element[i]) 
+	       dct_pgA1A4[lst_element[i]]['E']=xvar[13]*Eecc
+	    if xcmean[i]<5*l2/10 and xcmean[i]>=4*l2/10:
+	       xc_15.append(lst_element[i])  
+	       dct_pgA1A4[lst_element[i]]['E']=xvar[14]*Eecc        
+	       
+
+	    if xcmean[i]<6*l2/10 and xcmean[i]>=5*l2/10:
+	       xc_16.append(lst_element[i]) 
+	       dct_pgA1A4[lst_element[i]]['E']=xvar[15]*Eecc
+	       
+	    if xcmean[i]<7*l2/10 and xcmean[i]>=6*l2/10:
+	       xc_17.append(lst_element[i])   
+	       dct_pgA1A4[lst_element[i]]['E']=xvar[16]*Eecc
+	       
+	    if xcmean[i]<8*l2/10 and xcmean[i]>=7*l2/10:
+	       xc_18.append(lst_element[i]) 
+	       dct_pgA1A4[lst_element[i]]['E']=xvar[17]*Eecc
+	    if xcmean[i]<9*l2/10 and xcmean[i]>=8*l2/10:
+	       xc_19.append(lst_element[i])   
+	       dct_pgA1A4[lst_element[i]]['E']=xvar[18]*Eecc
+
+	    if xcmean[i]<=10*l2/10+0.0001 and xcmean[i]>=9*l2/10:
+	       xc_20.append(lst_element[i])   
+	       dct_pgA1A4[lst_element[i]]['E']=xvar[19]*Eecc
+
+    if lst_element[i] in dct_pgA1 and ycmean[i]<=h1/4*3 and ycmean[i]>h1/2:
+	    if xcmean[i]<1*l2/10:
+	       xc_21.append(lst_element[i])
+	       dct_pgA1A4[lst_element[i]]['E']=xvar[20]*Eecc
+	    if xcmean[i]<2*l2/10 and xcmean[i]>=1*l2/10:
+	       xc_22.append(lst_element[i]) 
+	       dct_pgA1A4[lst_element[i]]['E']=xvar[21]*Eecc
+	  
+	    if xcmean[i]<3*l2/10 and xcmean[i]>=2*l2/10:
+	       xc_23.append(lst_element[i])   
+	       dct_pgA1A4[lst_element[i]]['E']=xvar[22]*Eecc 
+
+	    if xcmean[i]<4*l2/10 and xcmean[i]>=3*l2/10:
+	       xc_24.append(lst_element[i]) 
+	       dct_pgA1A4[lst_element[i]]['E']=xvar[23]*Eecc
+	    if xcmean[i]<5*l2/10 and xcmean[i]>=4*l2/10:
+	       xc_25.append(lst_element[i])   
+	       dct_pgA1A4[lst_element[i]]['E']=xvar[24]*Eecc
+	       
+	    if xcmean[i]<6*l2/10 and xcmean[i]>=5*l2/10:
+	       xc_26.append(lst_element[i]) 
+	       dct_pgA1A4[lst_element[i]]['E']=xvar[25]*Eecc
+	    if xcmean[i]<7*l2/10 and xcmean[i]>=6*l2/10:
+	       xc_27.append(lst_element[i])   
+	       dct_pgA1A4[lst_element[i]]['E']=xvar[26]*Eecc       
+	       
+
+	    if xcmean[i]<8*l2/10 and xcmean[i]>=7*l2/10:
+	       xc_28.append(lst_element[i]) 
+	       dct_pgA1A4[lst_element[i]]['E']=xvar[27]*Eecc
+	    if xcmean[i]<9*l2/10 and xcmean[i]>=8*l2/10:
+	       xc_29.append(lst_element[i])   
+	       dct_pgA1A4[lst_element[i]]['E']=xvar[28]*Eecc
+	       
+	    if xcmean[i]<=10*l2/10+0.001 and xcmean[i]>=9*l2/10:
+	       xc_30.append(lst_element[i]) 
+	       dct_pgA1A4[lst_element[i]]['E']=xvar[29]*Eecc
+	       
+    if lst_element[i] in dct_pgA1 and ycmean[i]>h1/4*3:	       
+	       
+	    if xcmean[i]<1*l2/10:
+	       xc_31.append(lst_element[i])  
+	       dct_pgA1A4[lst_element[i]]['E']=xvar[30]*Eecc 
+
+	    if xcmean[i]<2*l2/10 and xcmean[i]>=1*l2/10:
+	       xc_32.append(lst_element[i]) 
+	       dct_pgA1A4[lst_element[i]]['E']=xvar[31]*Eecc
+	       
+	    if xcmean[i]<3*l2/10 and xcmean[i]>=2*l2/10:
+	       xc_33.append(lst_element[i])   
+	       dct_pgA1A4[lst_element[i]]['E']=xvar[32]*Eecc
+	       
+	    if xcmean[i]<4*l2/10 and xcmean[i]>=3*l2/10:
+	       xc_34.append(lst_element[i]) 
+	       dct_pgA1A4[lst_element[i]]['E']=xvar[33]*Eecc
+	    if xcmean[i]<5*l2/10 and xcmean[i]>=4*l2/10:
+	       xc_35.append(lst_element[i])      
+	       dct_pgA1A4[lst_element[i]]['E']=xvar[34]*Eecc    
+	       
+	    if xcmean[i]<6*l2/10 and xcmean[i]>=5*l2/10:
+	       xc_36.append(lst_element[i]) 
+	       dct_pgA1A4[lst_element[i]]['E']=xvar[35]*Eecc
+	       
+	    if xcmean[i]<7*l2/10 and xcmean[i]>=6*l2/10:
+	       xc_37.append(lst_element[i])   
+	       dct_pgA1A4[lst_element[i]]['E']=xvar[36]*Eecc
+	       
+	    if xcmean[i]<8*l2/10 and xcmean[i]>=7*l2/10:
+	       xc_38.append(lst_element[i]) 
+	       dct_pgA1A4[lst_element[i]]['E']=xvar[37]*Eecc
+	    if xcmean[i]<9*l2/10 and xcmean[i]>=8*l2/10:
+	       xc_39.append(lst_element[i])   
+	       dct_pgA1A4[lst_element[i]]['E']=xvar[38]*Eecc
+
+	    if xcmean[i]<=10*l2/10+0.0001 and xcmean[i]>=9*l2/10:
+	       xc_40.append(lst_element[i]) 
+	       dct_pgA1A4[lst_element[i]]['E']=xvar[39]*Eecc 
+
+
+
+    if lst_element[i] in dct_pgA4 and ycmean[i]<=(h1+h2+h3+h4/4):
+	    if xcmean[i]<1*l2/10:
+	       xc_41.append(lst_element[i])
+	       dct_pgA1A4[lst_element[i]]['E']=xvar[40]*Eecc
+	    if xcmean[i]<2*l2/10 and xcmean[i]>=1*l2/10:
+	       xc_42.append(lst_element[i]) 
+	       dct_pgA1A4[lst_element[i]]['E']=xvar[41]*Eecc
+	  
+	    if xcmean[i]<3*l2/10 and xcmean[i]>=2*l2/10:
+	       xc_43.append(lst_element[i])    
+	       dct_pgA1A4[lst_element[i]]['E']=xvar[42]*Eecc
+
+	    if xcmean[i]<4*l2/10 and xcmean[i]>=3*l2/10:
+	       xc_44.append(lst_element[i]) 
+	       dct_pgA1A4[lst_element[i]]['E']=xvar[43]*Eecc
+	    if xcmean[i]<5*l2/10 and xcmean[i]>=4*l2/10:
+	       xc_45.append(lst_element[i])   
+	       dct_pgA1A4[lst_element[i]]['E']=xvar[44]*Eecc
+	       
+	    if xcmean[i]<6*l2/10 and xcmean[i]>=5*l2/10:
+	       xc_46.append(lst_element[i]) 
+	       dct_pgA1A4[lst_element[i]]['E']=xvar[45]*Eecc
+	    if xcmean[i]<7*l2/10 and xcmean[i]>=6*l2/10:
+	       xc_47.append(lst_element[i])  
+	       dct_pgA1A4[lst_element[i]]['E']=xvar[46]*Eecc        
+	       
+
+	    if xcmean[i]<8*l2/10 and xcmean[i]>=7*l2/10:
+	       xc_48.append(lst_element[i]) 
+	       dct_pgA1A4[lst_element[i]]['E']=xvar[47]*Eecc
+	    if xcmean[i]<9*l2/10 and xcmean[i]>=8*l2/10:
+	       xc_49.append(lst_element[i])   
+	       dct_pgA1A4[lst_element[i]]['E']=xvar[48]*Eecc
+	       
+	    if xcmean[i]<=10*l2/10+0.001 and xcmean[i]>=9*l2/10:
+	       xc_50.append(lst_element[i]) 
+	       dct_pgA1A4[lst_element[i]]['E']=xvar[49]*Eecc
+	       
+    if lst_element[i] in dct_pgA4 and ycmean[i]<=(h1+h2+h3+h4/2) and ycmean[i]>(h1+h2+h3+h4/4):	       
+	    if xcmean[i]<1*l2/10:
+	       xc_51.append(lst_element[i])   
+	       dct_pgA1A4[lst_element[i]]['E']=xvar[50]*Eecc
+
+	    if xcmean[i]<2*l2/10 and xcmean[i]>=1*l2/10:
+	       xc_52.append(lst_element[i]) 
+	       dct_pgA1A4[lst_element[i]]['E']=xvar[51]*Eecc
+	    if xcmean[i]<3*l2/10 and xcmean[i]>=2*l2/10:
+	       xc_53.append(lst_element[i])  
+	       dct_pgA1A4[lst_element[i]]['E']=xvar[52]*Eecc 
+	       
+	    if xcmean[i]<4*l2/10 and xcmean[i]>=3*l2/10:
+	       xc_54.append(lst_element[i]) 
+	       dct_pgA1A4[lst_element[i]]['E']=xvar[53]*Eecc
+	    if xcmean[i]<5*l2/10 and xcmean[i]>=4*l2/10:
+	       xc_55.append(lst_element[i])  
+	       dct_pgA1A4[lst_element[i]]['E']=xvar[54]*Eecc        
+	       
+
+	    if xcmean[i]<6*l2/10 and xcmean[i]>=5*l2/10:
+	       xc_56.append(lst_element[i]) 
+	       dct_pgA1A4[lst_element[i]]['E']=xvar[55]*Eecc
+	       
+	    if xcmean[i]<7*l2/10 and xcmean[i]>=6*l2/10:
+	       xc_57.append(lst_element[i])   
+	       dct_pgA1A4[lst_element[i]]['E']=xvar[56]*Eecc
+	       
+	    if xcmean[i]<8*l2/10 and xcmean[i]>=7*l2/10:
+	       xc_58.append(lst_element[i]) 
+	       dct_pgA1A4[lst_element[i]]['E']=xvar[57]*Eecc
+	    if xcmean[i]<9*l2/10 and xcmean[i]>=8*l2/10:
+	       xc_59.append(lst_element[i])   
+	       dct_pgA1A4[lst_element[i]]['E']=xvar[58]*Eecc
+
+	    if xcmean[i]<=10*l2/10+0.0001 and xcmean[i]>=9*l2/10:
+	       xc_60.append(lst_element[i])   
+	       dct_pgA1A4[lst_element[i]]['E']=xvar[59]*Eecc
+
+    if lst_element[i] in dct_pgA4 and ycmean[i]<=(h1+h2+h3+h4/4*3) and ycmean[i]>(h1+h2+h3+h4/2):
+	    if xcmean[i]<1*l2/10:
+	       xc_61.append(lst_element[i])
+	       dct_pgA1A4[lst_element[i]]['E']=xvar[60]*Eecc
+	    if xcmean[i]<2*l2/10 and xcmean[i]>=1*l2/10:
+	       xc_62.append(lst_element[i]) 
+	       dct_pgA1A4[lst_element[i]]['E']=xvar[61]*Eecc
+	  
+	    if xcmean[i]<3*l2/10 and xcmean[i]>=2*l2/10:
+	       xc_63.append(lst_element[i])   
+	       dct_pgA1A4[lst_element[i]]['E']=xvar[62]*Eecc 
+
+	    if xcmean[i]<4*l2/10 and xcmean[i]>=3*l2/10:
+	       xc_64.append(lst_element[i]) 
+	       dct_pgA1A4[lst_element[i]]['E']=xvar[63]*Eecc
+	    if xcmean[i]<5*l2/10 and xcmean[i]>=4*l2/10:
+	       xc_65.append(lst_element[i])   
+	       dct_pgA1A4[lst_element[i]]['E']=xvar[64]*Eecc
+	       
+	    if xcmean[i]<6*l2/10 and xcmean[i]>=5*l2/10:
+	       xc_66.append(lst_element[i]) 
+	       dct_pgA1A4[lst_element[i]]['E']=xvar[65]*Eecc
+	    if xcmean[i]<7*l2/10 and xcmean[i]>=6*l2/10:
+	       xc_67.append(lst_element[i])   
+	       dct_pgA1A4[lst_element[i]]['E']=xvar[66]*Eecc       
+	       
+
+	    if xcmean[i]<8*l2/10 and xcmean[i]>=7*l2/10:
+	       xc_68.append(lst_element[i]) 
+	       dct_pgA1A4[lst_element[i]]['E']=xvar[67]*Eecc
+	    if xcmean[i]<9*l2/10 and xcmean[i]>=8*l2/10:
+	       xc_69.append(lst_element[i])   
+	       dct_pgA1A4[lst_element[i]]['E']=xvar[68]*Eecc
+	       
+	    if xcmean[i]<=10*l2/10+0.001 and xcmean[i]>=9*l2/10:
+	       xc_70.append(lst_element[i]) 
+	       dct_pgA1A4[lst_element[i]]['E']=xvar[69]*Eecc
+	       
+    if lst_element[i] in dct_pgA4 and ycmean[i]>(h1+h2+h3+h4/4*3):	       
+	       
+	    if xcmean[i]<1*l2/10:
+	       xc_71.append(lst_element[i])  
+	       dct_pgA1A4[lst_element[i]]['E']=xvar[70]*Eecc 
+
+	    if xcmean[i]<2*l2/10 and xcmean[i]>=1*l2/10:
+	       xc_72.append(lst_element[i]) 
+	       dct_pgA1A4[lst_element[i]]['E']=xvar[71]*Eecc
+	       
+	    if xcmean[i]<3*l2/10 and xcmean[i]>=2*l2/10:
+	       xc_73.append(lst_element[i])   
+	       dct_pgA1A4[lst_element[i]]['E']=xvar[72]*Eecc
+	       
+	    if xcmean[i]<4*l2/10 and xcmean[i]>=3*l2/10:
+	       xc_74.append(lst_element[i]) 
+	       dct_pgA1A4[lst_element[i]]['E']=xvar[73]*Eecc
+	    if xcmean[i]<5*l2/10 and xcmean[i]>=4*l2/10:
+	       xc_75.append(lst_element[i])      
+	       dct_pgA1A4[lst_element[i]]['E']=xvar[74]*Eecc    
+	       
+	    if xcmean[i]<6*l2/10 and xcmean[i]>=5*l2/10:
+	       xc_76.append(lst_element[i]) 
+	       dct_pgA1A4[lst_element[i]]['E']=xvar[75]*Eecc
+	       
+	    if xcmean[i]<7*l2/10 and xcmean[i]>=6*l2/10:
+	       xc_77.append(lst_element[i])   
+	       dct_pgA1A4[lst_element[i]]['E']=xvar[76]*Eecc
+	       
+	    if xcmean[i]<8*l2/10 and xcmean[i]>=7*l2/10:
+	       xc_78.append(lst_element[i]) 
+	       dct_pgA1A4[lst_element[i]]['E']=xvar[77]*Eecc
+	    if xcmean[i]<9*l2/10 and xcmean[i]>=8*l2/10:
+	       xc_79.append(lst_element[i])   
+	       dct_pgA1A4[lst_element[i]]['E']=xvar[78]*Eecc
+
+	    if xcmean[i]<=10*l2/10+0.0001 and xcmean[i]>=9*l2/10:
+	       xc_80.append(lst_element[i]) 
+	       dct_pgA1A4[lst_element[i]]['E']=xvar[79]*Eecc 
+              
+# ASSIGN materto everything
+
+mat_ncc = DEFI_MATERIAU(ELAS=_F(E=Encc/Eecc,NU=Nuncc))
+mat_ecc = DEFI_MATERIAU(ELAS=_F(E=1,NU=Nuecc))
+mat_arti = DEFI_MATERIAU(ELAS=_F(E=Earti/Eecc,NU=Nuncc))
+
+mat1=DEFI_MATERIAU(ELAS=_F(E=xvar[0],NU=Nuncc)) 
+mat2=DEFI_MATERIAU(ELAS=_F(E=xvar[1],NU=Nuncc)) 
+mat3=DEFI_MATERIAU(ELAS=_F(E=xvar[2],NU=Nuncc)) 
+mat4=DEFI_MATERIAU(ELAS=_F(E=xvar[3],NU=Nuncc)) 
+mat5=DEFI_MATERIAU(ELAS=_F(E=xvar[4],NU=Nuncc)) 
+mat6=DEFI_MATERIAU(ELAS=_F(E=xvar[5],NU=Nuncc)) 
+mat7=DEFI_MATERIAU(ELAS=_F(E=xvar[6],NU=Nuncc)) 
+mat8=DEFI_MATERIAU(ELAS=_F(E=xvar[7],NU=Nuncc)) 
+mat9=DEFI_MATERIAU(ELAS=_F(E=xvar[8],NU=Nuncc)) 
+mat10=DEFI_MATERIAU(ELAS=_F(E=xvar[9],NU=Nuncc)) 
+mat11=DEFI_MATERIAU(ELAS=_F(E=xvar[10],NU=Nuncc)) 
+mat12=DEFI_MATERIAU(ELAS=_F(E=xvar[11],NU=Nuncc)) 
+mat13=DEFI_MATERIAU(ELAS=_F(E=xvar[12],NU=Nuncc)) 
+mat14=DEFI_MATERIAU(ELAS=_F(E=xvar[13],NU=Nuncc)) 
+mat15=DEFI_MATERIAU(ELAS=_F(E=xvar[14],NU=Nuncc)) 
+mat16=DEFI_MATERIAU(ELAS=_F(E=xvar[15],NU=Nuncc)) 
+mat17=DEFI_MATERIAU(ELAS=_F(E=xvar[16],NU=Nuncc)) 
+mat18=DEFI_MATERIAU(ELAS=_F(E=xvar[17],NU=Nuncc)) 
+mat19=DEFI_MATERIAU(ELAS=_F(E=xvar[18],NU=Nuncc)) 
+mat20=DEFI_MATERIAU(ELAS=_F(E=xvar[19],NU=Nuncc)) 
+mat21=DEFI_MATERIAU(ELAS=_F(E=xvar[20],NU=Nuncc)) 
+mat22=DEFI_MATERIAU(ELAS=_F(E=xvar[21],NU=Nuncc)) 
+mat23=DEFI_MATERIAU(ELAS=_F(E=xvar[22],NU=Nuncc)) 
+mat24=DEFI_MATERIAU(ELAS=_F(E=xvar[23],NU=Nuncc)) 
+mat25=DEFI_MATERIAU(ELAS=_F(E=xvar[24],NU=Nuncc)) 
+mat26=DEFI_MATERIAU(ELAS=_F(E=xvar[25],NU=Nuncc)) 
+mat27=DEFI_MATERIAU(ELAS=_F(E=xvar[26],NU=Nuncc)) 
+mat28=DEFI_MATERIAU(ELAS=_F(E=xvar[27],NU=Nuncc)) 
+mat29=DEFI_MATERIAU(ELAS=_F(E=xvar[28],NU=Nuncc)) 
+mat30=DEFI_MATERIAU(ELAS=_F(E=xvar[29],NU=Nuncc)) 
+mat31=DEFI_MATERIAU(ELAS=_F(E=xvar[30],NU=Nuncc)) 
+mat32=DEFI_MATERIAU(ELAS=_F(E=xvar[31],NU=Nuncc)) 
+mat33=DEFI_MATERIAU(ELAS=_F(E=xvar[32],NU=Nuncc)) 
+mat34=DEFI_MATERIAU(ELAS=_F(E=xvar[33],NU=Nuncc)) 
+mat35=DEFI_MATERIAU(ELAS=_F(E=xvar[34],NU=Nuncc)) 
+mat36=DEFI_MATERIAU(ELAS=_F(E=xvar[35],NU=Nuncc)) 
+mat37=DEFI_MATERIAU(ELAS=_F(E=xvar[36],NU=Nuncc)) 
+mat38=DEFI_MATERIAU(ELAS=_F(E=xvar[37],NU=Nuncc)) 
+mat39=DEFI_MATERIAU(ELAS=_F(E=xvar[38],NU=Nuncc)) 
+mat40=DEFI_MATERIAU(ELAS=_F(E=xvar[39],NU=Nuncc)) 
+mat41=DEFI_MATERIAU(ELAS=_F(E=xvar[40],NU=Nuncc)) 
+mat42=DEFI_MATERIAU(ELAS=_F(E=xvar[41],NU=Nuncc)) 
+mat43=DEFI_MATERIAU(ELAS=_F(E=xvar[42],NU=Nuncc)) 
+mat44=DEFI_MATERIAU(ELAS=_F(E=xvar[43],NU=Nuncc)) 
+mat45=DEFI_MATERIAU(ELAS=_F(E=xvar[44],NU=Nuncc)) 
+mat46=DEFI_MATERIAU(ELAS=_F(E=xvar[45],NU=Nuncc)) 
+mat47=DEFI_MATERIAU(ELAS=_F(E=xvar[46],NU=Nuncc)) 
+mat48=DEFI_MATERIAU(ELAS=_F(E=xvar[47],NU=Nuncc)) 
+mat49=DEFI_MATERIAU(ELAS=_F(E=xvar[48],NU=Nuncc)) 
+mat50=DEFI_MATERIAU(ELAS=_F(E=xvar[49],NU=Nuncc)) 
+mat51=DEFI_MATERIAU(ELAS=_F(E=xvar[50],NU=Nuncc)) 
+mat52=DEFI_MATERIAU(ELAS=_F(E=xvar[51],NU=Nuncc)) 
+mat53=DEFI_MATERIAU(ELAS=_F(E=xvar[52],NU=Nuncc)) 
+mat54=DEFI_MATERIAU(ELAS=_F(E=xvar[53],NU=Nuncc)) 
+mat55=DEFI_MATERIAU(ELAS=_F(E=xvar[54],NU=Nuncc)) 
+mat56=DEFI_MATERIAU(ELAS=_F(E=xvar[55],NU=Nuncc)) 
+mat57=DEFI_MATERIAU(ELAS=_F(E=xvar[56],NU=Nuncc)) 
+mat58=DEFI_MATERIAU(ELAS=_F(E=xvar[57],NU=Nuncc)) 
+mat59=DEFI_MATERIAU(ELAS=_F(E=xvar[58],NU=Nuncc)) 
+mat60=DEFI_MATERIAU(ELAS=_F(E=xvar[59],NU=Nuncc)) 
+mat61=DEFI_MATERIAU(ELAS=_F(E=xvar[60],NU=Nuncc)) 
+mat62=DEFI_MATERIAU(ELAS=_F(E=xvar[61],NU=Nuncc)) 
+mat63=DEFI_MATERIAU(ELAS=_F(E=xvar[62],NU=Nuncc)) 
+mat64=DEFI_MATERIAU(ELAS=_F(E=xvar[63],NU=Nuncc)) 
+mat65=DEFI_MATERIAU(ELAS=_F(E=xvar[64],NU=Nuncc)) 
+mat66=DEFI_MATERIAU(ELAS=_F(E=xvar[65],NU=Nuncc)) 
+mat67=DEFI_MATERIAU(ELAS=_F(E=xvar[66],NU=Nuncc)) 
+mat68=DEFI_MATERIAU(ELAS=_F(E=xvar[67],NU=Nuncc)) 
+mat69=DEFI_MATERIAU(ELAS=_F(E=xvar[68],NU=Nuncc)) 
+mat70=DEFI_MATERIAU(ELAS=_F(E=xvar[69],NU=Nuncc)) 
+mat71=DEFI_MATERIAU(ELAS=_F(E=xvar[70],NU=Nuncc)) 
+mat72=DEFI_MATERIAU(ELAS=_F(E=xvar[71],NU=Nuncc)) 
+mat73=DEFI_MATERIAU(ELAS=_F(E=xvar[72],NU=Nuncc)) 
+mat74=DEFI_MATERIAU(ELAS=_F(E=xvar[73],NU=Nuncc)) 
+mat75=DEFI_MATERIAU(ELAS=_F(E=xvar[74],NU=Nuncc)) 
+mat76=DEFI_MATERIAU(ELAS=_F(E=xvar[75],NU=Nuncc)) 
+mat77=DEFI_MATERIAU(ELAS=_F(E=xvar[76],NU=Nuncc)) 
+mat78=DEFI_MATERIAU(ELAS=_F(E=xvar[77],NU=Nuncc)) 
+mat79=DEFI_MATERIAU(ELAS=_F(E=xvar[78],NU=Nuncc)) 
+mat80=DEFI_MATERIAU(ELAS=_F(E=xvar[79],NU=Nuncc)) 
+
+      
+fieldmat = AFFE_MATERIAU ( MAILLAGE = mesh,
+                AFFE = (
+                     # _F(TOUT = 'OUI' , MATER = mat_ecc),
+                      _F(GROUP_MA = 'pgA0' , MATER = mat_ecc),
+                      _F(GROUP_MA = 'pgA1' , MATER = mat_ecc),
+                      _F(GROUP_MA = 'pgA4' , MATER = mat_ecc),
+                      _F(GROUP_MA = 'pgA2' , MATER = mat_arti),
+                      _F(GROUP_MA = 'pgA3' , MATER = mat_arti),
+                      _F(GROUP_MA = 'pgA5' , MATER = mat_ecc),
+                     _F(MAILLE= xc_1, MATER = mat1), 
+                     _F(MAILLE= xc_2, MATER = mat2), 
+                     _F(MAILLE= xc_3, MATER = mat3,), 
+                     _F(MAILLE= xc_4, MATER = mat4,), 
+                     _F(MAILLE= xc_5, MATER = mat5,), 
+                     _F(MAILLE= xc_6, MATER = mat6,), 
+                     _F(MAILLE= xc_7, MATER = mat7,), 
+                     _F(MAILLE= xc_8, MATER =mat8,), 
+                     _F(MAILLE= xc_9, MATER = mat9,), 
+                     _F(MAILLE= xc_10, MATER = mat10,), 
+                      _F(MAILLE= xc_11, MATER = mat11,), 
+                      _F(MAILLE= xc_12, MATER = mat12,), 
+                      _F(MAILLE= xc_13, MATER = mat13,), 
+                      _F(MAILLE= xc_14, MATER = mat14,), 
+                      _F(MAILLE= xc_15, MATER = mat15,), 
+                      _F(MAILLE= xc_16, MATER = mat16,), 
+                      _F(MAILLE= xc_17, MATER = mat17,), 
+                      _F(MAILLE= xc_18, MATER = mat18,), 
+                      _F(MAILLE= xc_19, MATER = mat19,), 
+                      _F(MAILLE= xc_20, MATER = mat20,), 
+                     _F(MAILLE= xc_21, MATER = mat21), 
+                     _F(MAILLE= xc_22, MATER = mat22), 
+                     _F(MAILLE= xc_23, MATER = mat23,), 
+                     _F(MAILLE= xc_24, MATER = mat24,), 
+                     _F(MAILLE= xc_25, MATER = mat25,), 
+                     _F(MAILLE= xc_26, MATER = mat26,), 
+                     _F(MAILLE= xc_27, MATER = mat27,), 
+                     _F(MAILLE= xc_28, MATER =mat28,), 
+                     _F(MAILLE= xc_29, MATER = mat29,), 
+                    _F(MAILLE= xc_30, MATER = mat30,), 
+                      _F(MAILLE= xc_31, MATER = mat31,), 
+                      _F(MAILLE= xc_32, MATER = mat32,), 
+                      _F(MAILLE= xc_33, MATER = mat33,), 
+                      _F(MAILLE= xc_34, MATER = mat34,), 
+                      _F(MAILLE= xc_35, MATER = mat35,), 
+                      _F(MAILLE= xc_36, MATER = mat36,), 
+                      _F(MAILLE= xc_37, MATER = mat37,), 
+                      _F(MAILLE= xc_38, MATER = mat38,), 
+                      _F(MAILLE= xc_39, MATER = mat39,), 
+                      _F(MAILLE= xc_40, MATER = mat40,), 
+                     _F(MAILLE= xc_41, MATER = mat41), 
+                     _F(MAILLE= xc_42, MATER = mat42), 
+                     _F(MAILLE= xc_43, MATER = mat43,), 
+                     _F(MAILLE= xc_44, MATER = mat44,), 
+                     _F(MAILLE= xc_45, MATER = mat45,), 
+                     _F(MAILLE= xc_46, MATER = mat46,), 
+                     _F(MAILLE= xc_47, MATER = mat47,), 
+                     _F(MAILLE= xc_48, MATER =mat48,), 
+                     _F(MAILLE= xc_49, MATER = mat49,), 
+                     _F(MAILLE= xc_50, MATER = mat50,), 
+                      _F(MAILLE= xc_51, MATER = mat51,), 
+                      _F(MAILLE= xc_52, MATER = mat52,), 
+                      _F(MAILLE= xc_53, MATER = mat53,), 
+                      _F(MAILLE= xc_54, MATER = mat54,), 
+                      _F(MAILLE= xc_55, MATER = mat55,), 
+                      _F(MAILLE= xc_56, MATER = mat56,), 
+                      _F(MAILLE= xc_57, MATER = mat57,), 
+                      _F(MAILLE= xc_58, MATER = mat58,), 
+                      _F(MAILLE= xc_59, MATER = mat59,), 
+                      _F(MAILLE= xc_60, MATER = mat60,), 
+                     _F(MAILLE= xc_61, MATER = mat61), 
+                     _F(MAILLE= xc_62, MATER = mat62), 
+                     _F(MAILLE= xc_63, MATER = mat63,), 
+                     _F(MAILLE= xc_64, MATER = mat64,), 
+                     _F(MAILLE= xc_65, MATER = mat65,), 
+                     _F(MAILLE= xc_66, MATER = mat66,), 
+                     _F(MAILLE= xc_67, MATER = mat67,), 
+                     _F(MAILLE= xc_68, MATER =mat68,), 
+                     _F(MAILLE= xc_69, MATER = mat69,), 
+                    _F(MAILLE= xc_70, MATER = mat70,), 
+                      _F(MAILLE= xc_71, MATER = mat71,), 
+                      _F(MAILLE= xc_72, MATER = mat72,), 
+                      _F(MAILLE= xc_73, MATER = mat73,), 
+                      _F(MAILLE= xc_74, MATER = mat74,), 
+                      _F(MAILLE= xc_75, MATER = mat75,), 
+                      _F(MAILLE= xc_76, MATER = mat76,), 
+                      _F(MAILLE= xc_77, MATER = mat77,), 
+                      _F(MAILLE= xc_78, MATER = mat78,), 
+                      _F(MAILLE= xc_79, MATER = mat79,), 
+                      _F(MAILLE= xc_80, MATER = mat80,),                       
+                      
+                      ),
+                      INFO = 1,)
+
+with open(elems_props_current, "w") as outfile:
+    json.dump(dct_pgA1A4, outfile)
+#mat_e01 = DEFI_MATERIAU(ELAS=_F(E=coefmat*Eecc,NU=Nuecc))
+    
+listr = DEFI_LIST_REEL(DEBUT=0.0,
+          INTERVALLE=_F(JUSQU_A=1.0, NOMBRE=20),
+          INFO=2,
+          )
+
+
+funcRAMP = DEFI_FONCTION(NOM_PARA='INST',
+                VALE=(0.0, 0.0, 1.0, 1.0))
+
+load = AFFE_CHAR_MECA(
+          FORCE_CONTOUR=_F(FY = F_Countour, GROUP_MA=('pgLoad', )),
+          #FORCE_NODALE=_F(FY=Fy, GROUP_NO=('nodeFY', )),
+          # PRES_REP= _F(GROUP_MA=('pgLoad'), PRES=PRESSURE,),
+          #DDL_IMPO=_F(DY=-uyy,GROUP_MA=('pgLoad', )),
+          #DDL_IMPO=_F(DY=-1,GROUP_NO=('nodeFY1', )),
+          MODELE=model,
+          )
+
+bc = AFFE_CHAR_MECA(
+          DDL_IMPO=(
+                _F(DX=0.0,DY=0.0, GROUP_MA=('pgFixed', )),
+                #_F(DX=0.0, GROUP_MA=('pgLoad', )),
+                # _F(DX=0.0, DY=0.0, GROUP_NO=('nodeDxDY', )),
+                # _F(DX=0.0, GROUP_MA=('pgSymA1','pgSymA2')),
+                _F(DX=0.0, GROUP_MA=('pgSymA1','pgSymA2','pgSymA3','pgSymA4','pgSymA5')),
+                _F(DX=0.0, GROUP_MA=('pgSymA11','pgSymA22','pgSymA33','pgSymA44','pgSymA55')),
+                ),
+          #LIAISON_SOLIDE =_F (GROUP_MA='pgLoad',DIST_MIN = 0.001,),
+          #LIAISON_DDL =_F (GROUP_NO = ('nodeFY', 'nodeFY2'),DDL = ('DY', 'DY'),COEF_MULT = (1. , -1.), COEF_IMPO = 0. ,),
+          MODELE=model,
+                )
+
+# Standard contact method copied from Salome "Add Stage with assistant"
+contact = DEFI_CONTACT(
+          ALGO_RESO_CONT='NEWTON', 
+          FORMULATION='CONTINUE',  
+          MODELE=model, 
+          ZONE=_F(ALGO_CONT='STANDARD',
+                      CONTACT_INIT='INTERPENETRE', 
+                      GROUP_MA_ESCL='pgCtA2', 
+                      GROUP_MA_MAIT='pgCtA3',
+                      # INTEGRATION='GAUSS',
+                      ),
+           INFO=1,
+                ) 
+
+resnonl = STAT_NON_LINE(CHAM_MATER=fieldmat,
+                CONTACT=contact,
+                EXCIT=(_F(CHARGE=bc),
+                       _F(CHARGE=load,
+                          FONC_MULT=funcRAMP)),
+                INCREMENT=_F(LIST_INST=listr),
+                METHODE='NEWTON',
+                CONVERGENCE=_F(ITER_GLOB_MAXI=105,),
+                MODELE=model,
+                NEWTON=_F(REAC_ITER=1))
+
+resnonl = CALC_CHAMP(reuse=resnonl,
+          CONTRAINTE=('SIEF_ELNO', 'SIEF_NOEU', 'SIGM_ELNO'),
+          RESULTAT=resnonl)
+
+#########################################################################
+#                                                                       
+#     Calculation of Octahedral Stresses                       
+#                                                                       
+#########################################################################
+
+
+Sh = '(sqrt(((SIXX+SIYY+SIZZ)/3)**2))' 
+So = '(sqrt((SIXX-SIYY)**2+(SIYY-SIZZ)**2+(SIZZ-SIXX)**2))/3' 
+
+s_h = FORMULE(NOM_PARA=('SIXX','SIYY','SIZZ','SIXY'),
+    VALE=Sh)
+
+s_o = FORMULE(NOM_PARA=('SIXX','SIYY','SIZZ','SIXY'),
+    VALE=So)
+
+sixx = 'SIXX'
+siyy = 'SIYY'
+sizz = 'SIZZ'
+sixy = 'SIXY'
+smises = 'sqrt(1/2*(SIXX-SIYY)**2+1/2*(SIYY-SIZZ)**2+1/2*(SIXX-SIZZ)**2+3*(SIXY)**2)' 
+
+s_xx = FORMULE(NOM_PARA=('SIXX','SIYY','SIZZ','SIXY'),
+    VALE=sixx)
+s_yy = FORMULE(NOM_PARA=('SIXX','SIYY','SIZZ','SIXY'),
+    VALE=siyy)
+s_zz = FORMULE(NOM_PARA=('SIXX','SIYY','SIZZ','SIXY'),
+    VALE=sizz)
+s_xy = FORMULE(NOM_PARA=('SIXX','SIYY','SIZZ','SIXY'),
+    VALE=sixy)
+s_mises = FORMULE(NOM_PARA=('SIXX','SIYY','SIZZ','SIXY'),
+    VALE=smises)
+
+
+
+resnonl = CALC_CHAMP(reuse=resnonl,
+          CONTRAINTE=('SIGM_ELGA','SIGM_NOEU'),
+          DEFORMATION=('EPSI_ELGA'),
+          ENERGIE=('ETOT_ELEM'),
+          GROUP_MA=('TOTAL'),
+          FORCE=('FORC_NODA'),
+          CHAM_UTIL=(_F(NOM_CHAM='SIGM_ELNO',
+                      FORMULE=(s_h,s_o,s_xx,s_yy,s_zz,s_xy,s_mises),
+                      NUME_CHAM_RESU=2,),
+                      _F(NOM_CHAM='SIGM_NOEU',
+                      FORMULE=(s_h,s_o,s_xx,s_yy,s_zz,s_xy,s_mises),
+                      NUME_CHAM_RESU=2,)),
+          LIST_INST=listr,
+          RESULTAT=resnonl)
+
+
+   
+
+
+champ = CREA_CHAMP (TYPE_CHAM = 'NOEU_NEUT_R', 
+          OPERATION='EXTR',
+          RESULTAT=resnonl,
+          INFO=2,
+          NOM_CHAM='UT02_NOEU',
+          INST=1.0)
+
+champ2 = CREA_CHAMP (TYPE_CHAM = 'ELEM_ENER_R', 
+          OPERATION='EXTR',
+          RESULTAT=resnonl,
+          INFO=2,
+          NOM_CHAM='ETOT_ELEM',
+          INST=1.0)
+          
+
+
+
+shh = champ.EXTR_COMP('X1',['TOTAL']).valeurs.tolist()
+soo = champ.EXTR_COMP('X2',['TOTAL']).valeurs.tolist()
+si_xx = champ.EXTR_COMP('X3',['TOTAL']).valeurs.tolist()
+si_yy = champ.EXTR_COMP('X4',['TOTAL']).valeurs.tolist()
+si_zz = champ.EXTR_COMP('X5',['TOTAL']).valeurs.tolist()
+si_xy = champ.EXTR_COMP('X6',['TOTAL']).valeurs.tolist()
+si_misses = champ.EXTR_COMP('X7',['TOTAL']).valeurs.tolist()
+
+shh_soo = [{"soo":soo[index],"shh":shh[index]} for index in range(len(shh))]
+
+
+
+dct_stress_nodes = {
+          'SIXX' : si_xx,
+          'SIYY' : si_yy,
+          'SIZZ' : si_zz,
+          'SIXY' : si_xy,
+          'SHH' : shh,
+          'SOO' : soo,
+          'shh_soo':shh_soo,
+          'si_misses':si_misses
+          }
+
+with open("/home/majnooni/VanVuongLAI/code_lai/"+fichier_folderv+"/dct_stress_nodeso.json", "w") as outfile:
+     json.dump(dct_stress_nodes, outfile)   
+
+
+#########################################################################
+#                                                                       
+#     
+#           LAGS_C 
+#                                                                
+#########################################################################
+cont_p = CALC_PRESSION(GEOMETRIE='DEFORMEE',
+                 GROUP_MA=('pgCtA2', ),
+                 INST=(1.0, ),
+                 MAILLAGE=mesh,
+                 INFO = 2,
+                 RESULTAT=resnonl,)
+
+
+pressField = cont_p.EXTR_COMP('LAGS_C', [], topo=1).valeurs.tolist()
+
+
+# Get table of contact pressure (###printable with IMPR_TABLE)
+tr_cont = POST_RELEVE_T(ACTION = (_F(INTITULE = 'Contact ' +
+                                        'pressure',
+                             OPERATION = 'EXTRACTION',
+                             GROUP_NO = 'pgCtA2',
+                             CHAM_GD = cont_p,
+                             NOM_CMP = ('LAGS_C'))))
+
+# Extract p(x)
+func_con = RECU_FONCTION(PARA_X = 'COOR_X',
+                 PARA_Y = 'LAGS_C',
+                 TABLE = tr_cont)
+
+# p(x) as a table
+tb_cont = CREA_TABLE(FONCTION = _F(FONCTION = func_con))
+
+# Dictionary of p(x)
+dct_ct_nodes = tb_cont.EXTR_TABLE().values()
+
+cp_values = {round(float(dct_ct_nodes['COOR_X'][i]),2):round(Eecc*abs(dct_ct_nodes['LAGS_C'][i]),2) for i in range(len(dct_ct_nodes['COOR_X']))}
+cp_values['energy_defor']=Eecc*np.sum(champ2.EXTR_COMP('TOTALE',['TOTAL']).valeurs.tolist())
+cp_values['s_mises_max']=Eecc*np.max(si_misses)
+
+with open(path_cp_values, "w") as outfile:
+      json.dump(cp_values, outfile)   
+
+# constructing CELL_DATA 
+lst_mat_props_TOTAL = list()
+
+
+for key in GROUP_MA_dict['TOTAL']:
+      ####print(key)
+     
+           
+      if key in dct_pgA1A4:
+            E = dct_pgA1A4[key]['E']         
+      
+      elif key in dct_pgA5:
+            E = dct_pgA5[key]['E']
+      elif key in dct_pgA0:
+            E = dct_pgA0[key]['E']
+      elif key in dct_pgA2:
+            E = dct_pgA2[key]['E']
+     
+      elif key in dct_pgA3:
+            E = dct_pgA3[key]['E']
+      else:
+            E=Encc     
+     
+
+      lst_mat_props_TOTAL.append(E)
+
+      ####print(key)
+
+
+
+# GENERATING VTK FILE
+with open(path_vtk,'w') as vtk_file:
+      # Heading of the vtk file
+      vtk_file.write('# vtk DataFile Version 4.2\n')
+      vtk_file.write(f'Results of Analysis {iteration}\n')
+      vtk_file.write('ASCII\n')
+      vtk_file.write('\n')
+
+      # Dataset Format
+      vtk_file.write('DATASET UNSTRUCTURED_GRID\n')
+      vtk_file.write('POINTS ' + str(ALLnnod) + ' float\n')
+
+      # Write coordinates of the nodes line by line
+      for num_node in range(ALLnnod):
+            x = str(round(coord_nodes[num_node,0],2))
+            y = str(round(coord_nodes[num_node,1],2))
+            z = str(round(coord_nodes[num_node,2],2))
+            vtk_file.write(f'{x} {y} {z}\n')
+      vtk_file.write('\n')
+
+      # Write cells line by line
+      size = 0
+      for num_elem in range(ALLnelem):
+            nodes = connec[num_elem]
+            size += len(nodes) + 1
+            line = np.insert(nodes, 0, len(nodes), axis=0)
+      
+      vtk_file.write('CELLS ' + str(ALLnelem) + ' ' + str(size) +'\n')
+      for num_elem in range(ALLnelem):
+            nodes = connec[num_elem]
+            cell_line = f'{len(nodes)}'
+            for node in nodes:
+                  cell_line += ' ' + str(node)
+            vtk_file.write(cell_line + '\n')
+      vtk_file.write('\n')
+
+      # Write type of cells line by line
+      vtk_file.write('CELL_TYPES '+ str(ALLnelem)+'\n')
+      for num_elem in range(ALLnelem):
+            len_nodes = len(connec[num_elem])
+            if len_nodes == 2:
+                  vtk_file.write(str(3)+'\n')
+            elif len_nodes == 3:
+                  vtk_file.write(str(5)+'\n')
+            elif len_nodes == 4:
+                  vtk_file.write(str(9)+'\n')
+            else:
+                  vtk_file.write('Happy birthday to you!'+'\n')
+      vtk_file.write('\n')
+
+      # Write cell data line by line
+      vtk_file.write('CELL_DATA ' + str(ALLnelem) + '\n')
+      vtk_file.write('SCALARS ' + 'E'+ ' float\n')
+      vtk_file.write('LOOKUP_TABLE default \n')
+      vtk_file.write('\n')
+      for val in lst_mat_props_TOTAL:
+            vtk_file.write(str(val) + '\n')
+
+     
+FIN()
+
+
+
+
