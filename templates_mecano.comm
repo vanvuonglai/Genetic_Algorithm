@@ -1,5 +1,4 @@
 
-
 import numpy as np
 import re
 import json
@@ -7,138 +6,8 @@ import copy
 import sys
 import time
 kappa=10
-def filtre_element(lst_new,nnodold,dctElems2,lst_old): #dctElems2[element_label]
-   lst_new1=[]
-   for keynew in lst_new:
-       nnodenew=0
-       nodenew=dctElems2[keynew]
-       for iinew in nodenew:
-           if iinew in nnodold:
-              nnodenew=nnodenew+1
-       if nnodenew>=3:
-           
-           lst_old.append(keynew)  
-       else:
-           lst_new1.append(keynew)    
-           
-   return lst_new1,lst_old
+
    
-
-def oi_calc(so,sh,kappa):
-      return so + kappa * sh # Carters equation OI = so + kappa * sh
-      
-def principal_Stress_calc(sxx,syy,sxy):
-      s11=(sxx+syy)/2+sqrt(1*(sxx-syy)**2/4+sxy**2)
-      s22=(sxx+syy)/2-sqrt(1*(sxx-syy)**2/4+sxy**2)
-      ss=1/2*sqrt((s11-s22)**2)
-      sh=(s11+s22)/2
-      return ss+kappa*min(0,sh) #s11,s22
-
-def principal_Stress_calc_soo(sxx,syy,sxy):
-      s11=(sxx+syy)/2+sqrt(1*(sxx-syy)**2/4+sxy**2)
-      s22=(sxx+syy)/2-sqrt(1*(sxx-syy)**2/4+sxy**2)
-      ss=1/2*sqrt((s11-s22)**2)
-      return ss
-
-def principal_Stress_calcsh(sxx,syy,sxy):
-      s11=(sxx+syy)/2+sqrt(1*(sxx-syy)**2/4+sxy**2)
-      s22=(sxx+syy)/2-sqrt(1*(sxx-syy)**2/4+sxy**2)
-      ss=1/2*sqrt((s11-s22)**2)
-      sh=(s11+s22)/2
-      return sh #s11,s22    
-
-def filtre_element(lst_new,nnodold,dctElems2,lst_old): #dctElems2[element_label]
-   lst_new1=[]
-   for keynew in lst_new:
-       nnodenew=0
-       nodenew=dctElems2[keynew]
-       
-       for iinew in nodenew:
-           if iinew in nnodold:
-              nnodenew=nnodenew+1
-       ##print('nodenewi=',nodenew,nnodenew)
-       if nnodenew>=len(nodenew):
-           
-           lst_old=np.append(lst_old,keynew)  
-       else:
-           lst_new1=np.append(lst_new1,keynew)    
-           
-   return lst_new1,lst_old      
-
-
-def filtre_element(lst_new,nnodold,dctElems2,lst_old,nodeallos): #dctElems2[element_label]
-   lst_new1=[]
-   for keynew in lst_new:
-       nnodenew=0
-       nnodenew1=0
-       nodenew=dctElems2[keynew]
-       
-       for iinew in nodenew:
-           if iinew in nnodold:
-              nnodenew=nnodenew+1
-           if iinew in nodeallos:
-              nnodenew1=nnodenew1+1
-
-       ##print('nodenewi=',nodenew,nnodenew)
-       if nnodenew+nnodenew1>=len(nodenew) or nnodenew>=4:
-           
-           lst_old=np.append(lst_old,keynew)  
-       else:
-           lst_new1=np.append(lst_new1,keynew)    
-           
-   return lst_new1,lst_old
-
-
-def filtre_element_old(lst_new,nnodnew,dctElems2,lst_old): #dctElems2[element_label]
-   lst_new1=[]
-   for keynew in lst_old:
-       nnodenew=0
-       nodenew=dctElems2[keynew]
-       
-       for iinew in nodenew:
-           if iinew in nnodnew:
-              nnodenew=nnodenew+1
-       ##print('nodenewi=',nodenew,nnodenew)
-       if nnodenew>=len(nodenew):
-           lst_new1=np.append(lst_new1,keynew)
-             
-       else:
-           lst_old=np.append(lst_old,keynew)
-           
-   return lst_new1,lst_old
-
-def find_thickness_oi(lst_old1,lst_old4,dctElems2,dctNodes): #dctElems2[element_label] dctNodes[temp_line[0]]
-   miny1=5000
-   maxy1=-5000
-   miny4=5000
-   maxy4=-5000   
-   
-   for keynew in lst_old1:
-       nnodenew=0
-       nodenew=dctElems2[keynew]
-       for iinew in nodenew:
-           miny1=min(miny1,dctNodes[iinew]['yc'])
-           maxy1=max(maxy1,dctNodes[iinew]['yc'])
-   for keynew in lst_old4:
-       nnodenew=0
-       nodenew=dctElems2[keynew]
-       for iinew in nodenew:
-           miny4=min(miny4,dctNodes[iinew]['yc'])
-           maxy4=max(maxy4,dctNodes[iinew]['yc'])   
-   
-   hmin=min(maxy1-miny1,maxy4-miny4) 
-           
-   return hmin
-
-def find_percent_oi(lst_old1,lst_old4,nele1,nele4): #dctElems2[element_label] dctNodes[temp_line[0]]
-    
-   
-   hmin=min(len(lst_old1)/nele1,len(lst_old4)/nele4) 
-           
-   return hmin
-
-
-
 
 def find_key_xc(lst_element,dctElems2,dctNodes): 
    
@@ -170,7 +39,7 @@ with open("/home/majnooni/VanVuongLAI/code_lai/namereper.json") as input_params:
 
 with open("/home/majnooni/VanVuongLAI/code_lai/"+namereper['name']+"/input_params.json") as input_params:
       input_data = json.load(input_params)
-
+# load input data
 iteration = input_data["iteration"]
 main_root = input_data["main_root"]
 path_A1 = input_data["path_A1"]
@@ -189,7 +58,6 @@ Nuecc = input_data["Nuecc"]
 Fy = input_data["Fy"]
 l2 = input_data["l2"]
 xvar=input_data['xvar']
-
 h1=input_data["h1"]
 h2=input_data["h2"]
 h3=input_data["h3"]
@@ -202,12 +70,9 @@ elems_props_new = input_data["elems_props_new"]
 elems_props_current = input_data["elems_props_current"]
 path_cp_values = input_data["path_cp_values"]
 repertoire=input_data["repertoire"]
-
 fichier_folderv=input_data['fichier_folder']
  
 
-def function_heaviside(x):
-   return round(1-1/(1+np.exp(-epsi*(0.5-x))),3) 
 #########################################################################
 #                                                                       
 #                                   CODE ASTER                                
@@ -228,7 +93,6 @@ mesh_A1 = LIRE_MAILLAGE(FORMAT='IDEAS',
                   UNITE=U,
                   INFO=1)
 
-
 U += 1
 DEFI_FICHIER(ACTION='ASSOCIER',
             FICHIER=path_A3,
@@ -248,9 +112,6 @@ mesh_A5 = LIRE_MAILLAGE(FORMAT='IDEAS', # IDEAS (.unv) format with PRE_IDEAS, U7
                   INFO=1)
 
 # Mesh merging
-
-
-
 
 meshA345 = ASSE_MAILLAGE(MAILLAGE_1=mesh_A3,
                         MAILLAGE_2=mesh_A5,
@@ -307,23 +168,16 @@ mesh = DEFI_GROUP(reuse = mesh,
                   MAILLAGE = mesh,
                   CREA_GROUP_NO=(
                                     _F(CRIT_NOEUD='TOUS', GROUP_MA=('pgFixed'), NOM=('pgFixed')),
-                                    # _F(CRIT_NOEUD='TOUS', GROUP_MA=('pgColA1'), NOM=('pgColA1')),
-                                    # _F(CRIT_NOEUD='TOUS', GROUP_MA=('pgSymA1'), NOM=('pgSymA1')),
                                     _F(CRIT_NOEUD='TOUS', GROUP_MA=('pgA1'), NOM=('pgA1')),
-                                    # _F(CRIT_NOEUD='TOUS', GROUP_MA=('pgColA2'),NOM=('pgColA2')),
                                     _F(CRIT_NOEUD='TOUS', GROUP_MA=('pgCtA2'),NOM=('pgCtA2')),
                                     _F(CRIT_NOEUD='TOUS', GROUP_MA=('pgSymA2'),NOM=('pgSymA2')),
                                     _F(CRIT_NOEUD='TOUS', GROUP_MA=('pgA2'),NOM=('pgA2')),
                                     _F(CRIT_NOEUD='TOUS', GROUP_MA=('pgA0'),NOM=('pgA0')),
                                     _F(CRIT_NOEUD='TOUS', GROUP_MA=('pgCtA3'), NOM=('pgCtA3')),
-                                    # _F(CRIT_NOEUD='TOUS', GROUP_MA=('pgColA3'), NOM=('pgColA3')),
                                     _F(CRIT_NOEUD='TOUS', GROUP_MA=('pgSymA3'),NOM=('pgSymA3')),
                                     _F(CRIT_NOEUD='TOUS', GROUP_MA=('pgA3'),NOM=('pgA3')),
-                                    # _F(CRIT_NOEUD='TOUS', GROUP_MA=('pgColA41'), NOM=('pgColA41')),
-                                    # _F(CRIT_NOEUD='TOUS', GROUP_MA=('pgColA42'), NOM=('pgColA42')),
                                     _F(CRIT_NOEUD='TOUS', GROUP_MA=('pgSymA4'),NOM=('pgSymA4')),
                                     _F(CRIT_NOEUD='TOUS', GROUP_MA=('pgA4'),NOM=('pgA4')),
-                                    # _F(CRIT_NOEUD='TOUS', GROUP_MA=('pgColA5'), NOM=('pgColA5')),
                                     _F(CRIT_NOEUD='TOUS', GROUP_MA=('pgLoad'), NOM=('pgLoad')),
                                     _F(CRIT_NOEUD='TOUS', GROUP_MA=('pgSymA5'),NOM=('pgSymA5')),
                                     _F(CRIT_NOEUD='TOUS', GROUP_MA=('pgA5'),NOM=('pgA5')),
@@ -438,9 +292,6 @@ for key in NoGO.keys():
       temp_list_nodes = [f'N{num}' for num in temp_array_nodes]
       GROUP_NO_dict[temp_key] = temp_list_nodes
   
-
-
-
 #######################
 
 model = AFFE_MODELE(AFFE=_F(
@@ -449,8 +300,6 @@ model = AFFE_MODELE(AFFE=_F(
                         PHENOMENE='MECANIQUE',
                         TOUT='OUI'),
                         MAILLAGE=mesh)
-
-
 
 ###################
 dct_pgA5 = dict()
@@ -937,7 +786,7 @@ for i in range(len(lst_element)):
 	       xc_80.append(lst_element[i]) 
 	       dct_pgA1A4[lst_element[i]]['E']=xvar[79]*Eecc 
               
-# ASSIGN materto everything
+# ASSIGN material properties to everything
 
 mat_ncc = DEFI_MATERIAU(ELAS=_F(E=Encc/Eecc,NU=Nuncc))
 mat_ecc = DEFI_MATERIAU(ELAS=_F(E=1,NU=Nuecc))
@@ -1126,7 +975,6 @@ listr = DEFI_LIST_REEL(DEBUT=0.0,
           INTERVALLE=_F(JUSQU_A=1.0, NOMBRE=20),
           INFO=2,
           )
-
 
 funcRAMP = DEFI_FONCTION(NOM_PARA='INST',
                 VALE=(0.0, 0.0, 1.0, 1.0))
