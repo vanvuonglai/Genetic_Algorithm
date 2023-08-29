@@ -16,11 +16,7 @@ def fitness_function(xvar,case_name):
     import mesh_A1A2A3A4A5_2body_qin2 as mesh_A1A2A3A4A5 
     from templates import export_template
     import json
-    
-
-#    case_name='qin_rigidinterfaceaxis_adimensionee_genetic_80' 
     if os.path.exists(str(pathlib.Path(__file__).parent.resolve())+'/'+case_name)==False:
-    #        shutil.rmtree(str(pathlib.Path(__file__).parent.resolve())+'/'+case_name)
         path = os.path.join(str(pathlib.Path(__file__).parent.resolve()), case_name)
         os.mkdir(path)  
     
@@ -63,12 +59,7 @@ def fitness_function(xvar,case_name):
     Nuecc = 0.3;
     
     #%% COMPUTE AND STORE RESULTS
-    
-   
-    
     iteration_all=0
-    
-        
     foldersave='result_Encc'+str(int(Encc/1000))+'GPa'+'_Earti'+str(int(Earti/1000))
     if os.path.exists(str(pathlib.Path(__file__).parent.resolve())+'/'+case_name+'/'+foldersave)==False:
         
@@ -81,9 +72,7 @@ def fitness_function(xvar,case_name):
     with open('parameters.json') as parameters:
         jsonData = json.load(parameters)
     jsonData={}    
-    
 
-    
     nameficheroi='plane_plane1_'
     
     ###### NEW DEVELOPMENT CODE 
@@ -106,12 +95,10 @@ def fitness_function(xvar,case_name):
     
     # Find and Delete the existing ANALYSIS directory
     if os.path.exists(main_root+'/'+nameficheroi)==False:
-    #                shutil.rmtree(main_root+'/'+nameficheroi)
         path = os.path.join(main_root, nameficheroi)
         os.mkdir(path)
     
-    # Path
-                      
+    # Path to store data     
     required_dirs = ['UNV','RMED','MESS','EXPORT','COMM','VTK','JSON']
     
     for item in required_dirs:
@@ -126,15 +113,10 @@ def fitness_function(xvar,case_name):
         
         # Writing to sample.json
     with open('namereper.json', "w") as outfile:
-            outfile.write(namereper_object)
-    #%%                
+            outfile.write(namereper_object)      
 
 
     plt.close('all')
-    
-
-
-    
     for num in range(1):
         
         print(num)
@@ -156,12 +138,9 @@ def fitness_function(xvar,case_name):
         path_vtk = paths_dic['VTK'] + f'/analysis_{iteration}.vtk'
         elems_props_current = paths_dic['JSON'] + f'/dct_pgA2_{iteration}.json'
         elems_props_new = paths_dic['JSON'] + f'/dct_pgA2_{iteration + 1}.json'
-        
         path_cp_values = paths_dic['RMED'] + f'/cp_values_{iteration}.json'
-
-        
-    
-        # Data to be written
+       
+        # Input Data to be written
             
         temp_dic = {
             'iteration': iteration,
@@ -194,7 +173,6 @@ def fitness_function(xvar,case_name):
             'h4': h4,            
             'l2': l2,
             'lcontour':lcontour,
-#            'xvar':[0.1,0.2,0.1,0.1,0.1,0.1,0.1,0.1,0.1,0.1,0.1, 0.1,0.1,0.1,0.1,0.1,0.1,0.1,0.1,0.1],
             'xvar':xvar,
             'repertoire':main_root + '/'+ nameficheroi,
             'fichier_folder':case_name+'/'+foldersave,
@@ -342,8 +320,6 @@ def genetic_algorithm(population_size, num_variables, generations, tournament_si
 
     return population
 
-
-#fitness_function(0.4,0.4,0.4,0.4,0.4,0.4,0.4,0.4,0.4,0.4,0.4, 0.4,0.4,0.4,0.4,0.4,0.4,0.4,0.4,0.4)
 case_name='qin_rigidinterfaceaxis_adimensionee_genetic_80_E80'
 population_size = 200# Population size of each generation 
 num_variables = 80# design domains divides into 10x8 equal subdomains
